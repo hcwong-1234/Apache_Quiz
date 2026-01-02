@@ -318,6 +318,18 @@ if (!emailSentRef.current && user?.email) {
         transition-colors duration-500
       "
     >
+      {percent === 100 && (
+        <div className="fixed inset-0 pointer-events-none z-40">
+          <div className="fireworks">
+            <div className="firework d1" style={{ "--x": "20%", "--y": "25%" }} />
+            <div className="firework d2" style={{ "--x": "45%", "--y": "18%" }} />
+            <div className="firework d3" style={{ "--x": "70%", "--y": "28%" }} />
+            <div className="firework d4" style={{ "--x": "80%", "--y": "45%" }} />
+            <div className="firework d2" style={{ "--x": "30%", "--y": "55%" }} />
+            <div className="firework d3" style={{ "--x": "55%", "--y": "60%" }} />
+          </div>
+        </div>
+      )}
       <section
         className="
           animate-fadeIn rounded-3xl shadow-xl p-8 md:p-10 max-w-3xl w-full
@@ -345,9 +357,16 @@ if (!emailSentRef.current && user?.email) {
 
         {/* Score card */}
         <div className="mb-8 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/80 dark:bg-slate-700/60 p-6 shadow-sm">
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-2">
-            Results
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              Results
+            </h2>
+            {percent === 100 && (
+              <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                Perfect score!
+              </span>
+            )}
+          </div>
           <p className="text-paynes dark:text-glaucous">
             You scored <b>{correct}</b> out of <b>{picked.length}</b>
           </p>
@@ -468,6 +487,41 @@ if (!emailSentRef.current && user?.email) {
         </div>
         )}
       </section>
+      <style>{`
+        .fireworks {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+        }
+        .firework {
+          position: absolute;
+          left: var(--x);
+          top: var(--y);
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.2);
+          animation: burst 1.6s ease-out infinite;
+          box-shadow:
+            0 -26px #ff6b6b,
+            18px -18px #ffd93d,
+            26px 0 #6bcb77,
+            18px 18px #4d96ff,
+            0 26px #a66bff,
+            -18px 18px #ff9f1c,
+            -26px 0 #ff6b6b,
+            -18px -18px #ffd93d;
+        }
+        .firework.d2 { animation-delay: 0.35s; }
+        .firework.d3 { animation-delay: 0.7s; }
+        .firework.d4 { animation-delay: 1.05s; }
+        @keyframes burst {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+          15% { opacity: 1; }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+        }
+      `}</style>
     </div>
   );
 }
