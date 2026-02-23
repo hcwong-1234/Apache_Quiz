@@ -194,7 +194,7 @@ if (!emailSentRef.current && user?.email) {
   setEmailStatus("sending");
 
   try {
-    const { error: fnError } = await supabase.functions.invoke(
+    const { data, error: fnError } = await supabase.functions.invoke(
       "send-results",
       {
         body: {
@@ -208,11 +208,19 @@ if (!emailSentRef.current && user?.email) {
       }
     );
 
-    if (fnError) throw fnError;
-    setEmailStatus("sent");
+    if (fnError) {
+      console.error("Email send failed:", fnError);
+      setEmailStatus("idle");
+      return;
+    }
+    if (data?.provider === "disabled" || data?.skipped) {
+      setEmailStatus("idle");
+    } else {
+      setEmailStatus("sent");
+    }
   } catch (e) {
     console.error("Email send failed:", e);
-    setEmailStatus("error");
+    setEmailStatus("idle");
   }
 }
 

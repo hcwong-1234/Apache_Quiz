@@ -2,10 +2,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // ---- Provider config (set via Supabase secrets) ----
-const MAIL_PROVIDER   = (Deno.env.get("MAIL_PROVIDER") || "sendgrid").toLowerCase(); // "sendgrid" | "resend"
-const RESEND_API_KEY  = (Deno.env.get("RESEND_API_KEY") || "");
-const SENDGRID_API_KEY= (Deno.env.get("SENDGRID_API_KEY") || "");
-const FROM_EMAIL      = Deno.env.get("FROM_EMAIL") || "DAIKAI Quiz <hc_wong@daikai.com>";
+const RESEND_API_KEY = (Deno.env.get("RESEND_API_KEY") || "");
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "DAIKAI Quiz <hc_wong@daikai.com>";
 
 // 🆕 Base URL of your app, used to build the results link
 // e.g. APP_BASE_URL="https://engine-quiz.vercel.app"
@@ -48,7 +46,7 @@ Deno.serve(async (req) => {
         400
       );
     }
-    console.log("send-results provider:", MAIL_PROVIDER, "from:", FROM_EMAIL);
+    console.log("send-results provider: resend", "from:", FROM_EMAIL);
 
     const pct = percentage ?? (total > 0 ? Math.round((score / total) * 100) : 0);
 
@@ -182,53 +180,16 @@ const fallbackHtml = `
 `;
 
 
-    // Parse "Name <email>" to what SendGrid prefers
-    const match = FROM_EMAIL.match(/^\s*(?:"?([^"]+)"?\s*)?<([^>]+)>\s*$/);
-    const fromName = match?.[1] || "DAIKAI Quiz";
-    const fromEmail = match?.[2] || FROM_EMAIL;
-
-    // ---- Provider switch ----
-    if (MAIL_PROVIDER === "sendgrid") {
-      if (!SENDGRID_API_KEY) {
-        console.error("Missing SENDGRID_API_KEY secret");
-        return cors({ ok: false, error: "Missing SENDGRID_API_KEY" }, 500);
-      }
-
-      const sgRes = await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${SENDGRID_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          personalizations: [
-            {
-              to: [{ email: to }],
-            },
-          ],
-          from: { email: fromEmail, name: fromName },
-          subject,
-          content: [{ type: "text/html", value: html || fallbackHtml }],
-        }),
-      });
-
-      if (!sgRes.ok) {
-        const details = await sgRes.text().catch(() => "");
-        console.error("SendGrid API error", sgRes.status, details);
-        return cors({ ok: false, error: "SendGrid error", details }, 500);
-      }
-
+    // Resend
+    if (!RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY missing; skipping email send");
       return cors({
         ok: true,
-        provider: "sendgrid",
+        provider: "disabled",
+        skipped: true,
+        reason: "Missing RESEND_API_KEY",
         reviewUrl: finalReviewUrl || null,
       });
-    }
-
-    // Default: Resend
-    if (!RESEND_API_KEY) {
-      console.error("Missing RESEND_API_KEY secret");
-      return cors({ ok: false, error: "Missing RESEND_API_KEY" }, 500);
     }
 
     const r = await fetch("https://api.resend.com/emails", {
